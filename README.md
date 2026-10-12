@@ -46,7 +46,7 @@ You need Windows and Visual Studio 2026 with the "Desktop development with C++" 
 Clone the repo, either from a terminal:
 
 ```
-git clone https://github.com/Alan64578/RoutePlanner.git
+git clone https://github.com/Alan64578/Dijkstra-Route-Planner.git
 ```
 
 or in Visual Studio with File > Clone Repository and the same URL. Then:
