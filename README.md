@@ -39,26 +39,6 @@ classDiagram
     Dijkstra "0..*" o-- "1" CollegeMap : map
 ```
 
-## Setting it up on a new computer
-
-You need Windows and Visual Studio 2026 with the "Desktop development with C++" workload. The Google Test adapter comes with that workload, but check it's ticked in the Visual Studio Installer.
-
-Clone the repo, either from a terminal:
-
-```
-git clone https://github.com/Alan64578/Dijkstra-Route-Planner.git
-```
-
-or in Visual Studio with File > Clone Repository and the same URL. Then:
-
-1. Open `RoutePlanner.sln`.
-2. If Visual Studio asks to retarget the projects, click OK. You'll only see this on an older version.
-3. Build with Ctrl+Shift+B. NuGet downloads Google Test on the first build. If you get a missing packages error, right-click the solution and pick Restore NuGet Packages.
-4. MapDemo should already be the startup project, so Ctrl+F5 runs the demo.
-5. For the tests go to Test > Test Explorer > Run All.
-
-Build output, `.vs/` and the NuGet packages are in `.gitignore`, so a fresh clone stays small and nothing machine-specific gets committed.
-
 ### Moving between computers
 
 Commit and push before you leave one machine, and pull when you sit down at the next. In Visual Studio that's Git > Commit All, then Git > Push, and Git > Pull on the other side. If you forget to push, the changes stay on the first computer.
