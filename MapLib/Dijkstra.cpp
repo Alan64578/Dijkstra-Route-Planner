@@ -5,8 +5,8 @@
 using namespace std;
 
 // just keep a pointer to the map
-Dijkstra::Dijkstra(CollegeMap &aMap)
-    : map(&aMap), nodes(0), source(-1), dist(0), processed(0), parent(0)
+Dijkstra::Dijkstra(CollegeMap& aMap)
+    : pMap(&aMap), nodes(0), source(-1), dist(0), processed(0), parent(0)
 {
 }
 
@@ -57,13 +57,13 @@ int Dijkstra::minDistance() const
 
 bool Dijkstra::run(int src)
 {
-    if (!map->isLoaded())
+    if (!pMap->isLoaded())
     {
         cout << "Dijkstra: no map loaded" << endl;
         source = -1;
         return false;
     }
-    if (!map->isValidNode(src))
+    if (!pMap->isValidNode(src))
     {
         cout << "Dijkstra: invalid source node " << src << endl;
         source = -1;
@@ -72,7 +72,7 @@ bool Dijkstra::run(int src)
 
     // allocate each run in case the map size changed
     release();
-    allocate(map->getNodesTotal());
+    allocate(pMap->getNodesTotal());
 
     for (int i = 0; i < nodes; i++)
     {
@@ -92,7 +92,7 @@ bool Dijkstra::run(int src)
 
         for (int v = 0; v < nodes; v++)
         {
-            int w = map->getWeight(u, v);
+            int w = pMap->getWeight(u, v);    // row u = edges out of u
             if (!processed[v] && w > 0 && dist[u] + w < dist[v])
             {
                 parent[v] = u;
@@ -127,7 +127,7 @@ int Dijkstra::getDistance(int dest) const
 
 // puts the route source..dest into route[], returns how many nodes (0 if none)
 // route[] needs room for the number of nodes in the map
-int Dijkstra::getRoute(int dest, int *route) const
+int Dijkstra::getRoute(int dest, int* route) const
 {
     if (!isReachable(dest))
         return 0;
@@ -166,7 +166,7 @@ void Dijkstra::printRoute(int dest) const
         return;
     }
 
-    int *route = new int[nodes];
+    int* route = new int[nodes];
     int count = getRoute(dest, route);
 
     cout << "Node " << source << " to " << dest << ", distance " << dist[dest] << ": ";
@@ -182,7 +182,7 @@ void Dijkstra::printRoute(int dest) const
 }
 
 // all routes, same code for cout and files
-ostream &operator<<(ostream &stream, const Dijkstra &ob)
+ostream& operator<<(ostream& stream, const Dijkstra& ob)
 {
     if (ob.source == -1)
     {
@@ -193,7 +193,7 @@ ostream &operator<<(ostream &stream, const Dijkstra &ob)
     stream << "Shortest routes from node " << ob.source << endl;
     stream << "Destination  Distance    Route" << endl;
 
-    int *route = new int[ob.nodes];
+    int* route = new int[ob.nodes];
     for (int dest = 0; dest < ob.nodes; dest++)
     {
         if (dest != ob.source)
@@ -223,7 +223,7 @@ ostream &operator<<(ostream &stream, const Dijkstra &ob)
 }
 
 // writes map and routes to a text file
-bool Dijkstra::saveResults(string fileName)
+bool Dijkstra::saveResults(string fileName) const
 {
     if (source == -1)
     {
@@ -238,7 +238,7 @@ bool Dijkstra::saveResults(string fileName)
         return false;
     }
 
-    fout << *map << endl;
+    fout << *pMap << endl;
     fout << *this;
     fout.close();
     return true;

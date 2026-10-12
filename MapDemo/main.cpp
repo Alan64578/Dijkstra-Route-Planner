@@ -22,6 +22,11 @@ int main()
     int src = 0;
     cout << "Enter source node (0-" << mtu.getNodesTotal() - 1 << "): ";
     cin >> src;
+    if (!cin)
+    {
+        cout << "Not a number - using node 0" << endl;
+        src = 0;
+    }
     cout << endl;
 
     {
@@ -36,7 +41,7 @@ int main()
 
     // map should still work
     cout << endl << "Dijkstra object destroyed - map still usable: "
-         << mtu.getName() << ", " << mtu.getNodesTotal() << " nodes" << endl << endl;
+        << mtu.getName() << ", " << mtu.getNodesTotal() << " nodes" << endl << endl;
 
     // change a weight and rerun
     Dijkstra planner2(mtu);
