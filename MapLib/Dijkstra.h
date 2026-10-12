@@ -8,7 +8,7 @@ using namespace std;
 
 class Dijkstra
 {
-    CollegeMap *map;    // not owned, never deleted here
+    CollegeMap *pMap;   // not owned, never deleted here
     int nodes;
     int source;         // -1 = not run yet
     int *dist;
@@ -34,7 +34,7 @@ public:
     int getRoute(int dest, int *route) const;
 
     void printRoute(int dest) const;
-    bool saveResults(string fileName);
+    bool saveResults(string fileName) const;
 
     // prints all routes, works for cout or a file
     friend ostream &operator<<(ostream &stream, const Dijkstra &ob);
