@@ -1,0 +1,12 @@
+# keep line endings consistent on any machine
+* text=auto
+
+# Visual Studio files use Windows line endings
+*.sln     text eol=crlf
+*.vcxproj text eol=crlf
+*.config  text eol=crlf
+*.cpp     text eol=crlf
+*.h       text eol=crlf
+*.txt     text eol=crlf
+
+*.png     binary
