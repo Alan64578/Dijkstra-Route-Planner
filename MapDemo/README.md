@@ -4,7 +4,7 @@ Console program for the demo part of the brief. When you run it, it:
 
 - tries to load a file that doesn't exist, to show a failed load leaves a safe empty map
 - loads `MTU Map.txt` and prints it
-- asks for a source node, prints the routes and saves them to `Routes.txt`
+- asks for a source node (uses node 0 if you don't type a number), prints the routes and saves them to `Routes.txt`
 - changes a weight and shows how the route changes
 - copies and assigns maps to show they're independent
 
