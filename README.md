@@ -1,6 +1,6 @@
-# RoutePlanner
+# Dijkstra Route Planner
 
-![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+![C++](https://img.shields.io/badge/language-C%2B%2B-00599C?logo=cplusplus&logoColor=white)
 ![Visual Studio](https://img.shields.io/badge/Visual%20Studio-2026-5C2D91?logo=visualstudio&logoColor=white)
 ![Google Test](https://img.shields.io/badge/tests-Google%20Test-4285F4)
 
@@ -36,10 +36,10 @@ classDiagram
         +getWeight(from, to) int
         +setWeight(from, to, weight) bool
     }
-    Dijkstra "0..*" o-- "1" CollegeMap : map
+    Dijkstra "0..*" o-- "1" CollegeMap : pMap
 ```
 
-### Moving between computers
+## Moving between computers
 
 Commit and push before you leave one machine, and pull when you sit down at the next. In Visual Studio that's Git > Commit All, then Git > Push, and Git > Pull on the other side. If you forget to push, the changes stay on the first computer.
 
@@ -61,7 +61,9 @@ Tiny_Map
 0 2 0
 ```
 
-The `MTU Map.txt` from the brief isn't symmetric ([3][5] is 14 but [5][3] is 0, and the same for [6][3]), so the loader prints a warning for it instead of rejecting the file.
+The `MTU Map.txt` from the brief isn't symmetric ([3][5] is 14 but [5][3] is 0, and [6][3] is 14 but [3][6] is 0), so the loader prints a warning for it instead of rejecting the file.
+
+Dijkstra reads row `u` of the matrix as the edges going out of node `u`, so those two edges only work in one direction. `setWeight()` always sets both directions.
 
 ## Progress
 
