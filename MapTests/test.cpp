@@ -396,7 +396,7 @@ TEST(DijkstraTest, OneNodeMapRunsFromNodeZero)
     remove("test_one_node.txt");
 }
 
-// D3 - hand worked: 0->1 = 5, 0->1->2 = 5+2 = 7
+// D3, CM8 - hand worked: 0->1 = 5, 0->1->2 = 5+2 = 7
 TEST_F(ThreeNodeMapTest, DistancesFromNodeZero)
 {
     CollegeMap map(fileName);
@@ -423,7 +423,7 @@ TEST_F(MtuMapTest, DistancesFromNodeZeroMatchBrief)
     EXPECT_EQ(14, planner.getDistance(8));
 }
 
-// D3 - source 3, worked out by hand (see report)
+// D3, CM8 - source 3, worked out by hand (see report)
 TEST_F(MtuMapTest, DistancesFromNodeThree)
 {
     CollegeMap map(fileName);
@@ -562,7 +562,7 @@ TEST_F(ThreeNodeMapTest, SaveBeforeRunFails)
     EXPECT_FALSE(planner.saveResults(outName));
 }
 
-// D1 - Dijkstra uses the map itself, not a copy
+// D1, CM8 - Dijkstra uses the map itself, not a copy
 TEST_F(ThreeNodeMapTest, DijkstraSeesChangesToMap)
 {
     CollegeMap map(fileName);
