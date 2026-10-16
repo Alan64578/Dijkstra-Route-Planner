@@ -1,0 +1,10 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="CollegeMapLib/CollegeMapLib.vcxproj" Id="6017f0f3-39aa-4d7e-87ff-96703e4a311a" />
+  <Project Path="Demo/Demo.vcxproj" Id="69f4ab07-a835-4c20-b50c-28909e624eaa" />
+  <Project Path="PortedTests/PortedTests.vcxproj" Id="4357b450-cc28-49bb-9016-956ab6fc60ed" />
+  <Project Path="Tests/Tests.vcxproj" Id="2db22139-8666-441d-a869-98daf0c1277c" />
+</Solution>

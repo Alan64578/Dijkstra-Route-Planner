@@ -18,6 +18,19 @@ The solution has three projects:
 
 `Report/` has the UML class diagram as a draw.io file.
 
+## AI solution (Part D)
+
+`AISolution/` is the solution an AI tool generated for Part D. It's kept separate from my code and has its own solution file, so it doesn't touch `RoutePlanner.sln`. Open `AISolution/AISolution.slnx` to build it.
+
+| Project | What it is |
+| --- | --- |
+| `CollegeMapLib` | The AI's `CollegeMap` and `Dijkstra` classes |
+| `Demo` | The AI's demo program |
+| `Tests` | The AI's own 65 Google Test tests (all pass) |
+| `PortedTests` | My 46 tests from `MapTests`, changed to fit the AI's class interface |
+
+On the map exactly as supplied in the brief, 32 of my 46 tests pass on the AI code and 14 fail. Most of the failures are because the AI rejects the non-symmetric `MTU Map.txt`, and the rest are output layout differences. The report goes through each one.
+
 ## How the classes fit together
 
 `CollegeMap` reads the map file, checks it and keeps the weights in a 2D array allocated with `new[]`. `Dijkstra` holds a pointer to a `CollegeMap` and runs the algorithm on it. Dijkstra never deletes the map, so the map can outlive any Dijkstra object that uses it. That's the aggregation the assignment is about.
@@ -75,7 +88,7 @@ Dijkstra reads row `u` of the matrix as the edges going out of node `u`, so thos
 - [x] UML class diagram
 - [x] Confirm the Visual Studio build has no warnings at /W3
 - [ ] Report
-- [ ] AI comparison (Part D)
+- [x] AI comparison (Part D)
 
 ## Rules from the brief
 
