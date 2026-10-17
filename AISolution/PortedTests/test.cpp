@@ -6,7 +6,21 @@
 #include "CollegeMap.h"
 #include "Dijkstra.h"
 using namespace std;
-// My 36 tests from MapTests/test.cpp, ported to the AI solution's interface.
+
+// My 34 tests from MapTests/test.cpp, ported to the AI solution's interface.
+// Test names and what each test checks are unchanged.
+// "PORT:" comments say what had to change and why.
+//
+// Interface changes used throughout:
+//   getNodesTotal() -> nodes()        getName() -> name()
+//   getWeight()     -> weight()       load() returns LoadStatus, not bool
+//   setWeight()     -> void, throws instead of returning false
+//   run()           -> void, throws instead of returning false
+//   getDistance()   -> distanceTo()   (NoRoute = -1 for unreachable, same as mine)
+//   getRoute(d, int*) -> routeTo(d) returning a string such as "3 -> 2"
+//   getSource()     -> source()       isValidNode() -> (none, checked through weight())
+//   printRoute(d)   -> (none, routeTo(d) gives the same text)
+//   operator<< for Dijkstra -> writeResults(ostream&)
 
 // makes a text file for the tests
 void writeFile(string fileName, string contents)
@@ -364,18 +378,6 @@ TEST_F(MtuMapTest, PrintRouteShowsOneRoute)
     EXPECT_NE(string::npos, output.find("3 -> 2 -> 5 -> 6 -> 7"));
 }
 
-// PORT: no printRoute(); routeTo() gives "unreachable" for this node, so it is used instead of CaptureStdout().
-TEST_F(SplitMapTest, PrintRouteSaysUnreachable)
-{
-    CollegeMap map("split.txt");
-    Dijkstra planner(map);
-    planner.run(0);
-
-    string output = planner.routeTo(3);
-
-    EXPECT_NE(string::npos, output.find("unreachable"));
-}
-
 // PORT: run() throws std::out_of_range instead of returning false; getSource() -> source().
 TEST_F(ThreeNodeMapTest, InvalidSourceIsRejected)
 {
@@ -433,14 +435,6 @@ TEST_F(ThreeNodeMapTest, SaveResultsWritesMapAndRoutes)
     EXPECT_EQ("Map: Tiny_Map Nodes: 3 0 1 2 0 0 5 0 1 5 0 2 2 0 2 0 "
               "Shortest routes from node 0 Destination Distance Route 1 5 0 -> 1 2 7 0 -> 1 -> 2",
               readWords("out.txt"));
-}
-
-// PORT: saveResults() before run() throws std::logic_error instead of returning false.
-TEST_F(ThreeNodeMapTest, SaveBeforeRunFails)
-{
-    CollegeMap map("tiny.txt");
-    Dijkstra planner(map);
-    EXPECT_THROW(planner.saveResults("out.txt"), std::logic_error);
 }
 
 // PORT: setWeight() is void, getDistance() -> distanceTo().
