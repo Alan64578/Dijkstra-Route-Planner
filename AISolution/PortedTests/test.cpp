@@ -6,21 +6,7 @@
 #include "CollegeMap.h"
 #include "Dijkstra.h"
 using namespace std;
-
 // My 36 tests from MapTests/test.cpp, ported to the AI solution's interface.
-// Test names and what each test checks are unchanged.
-// "PORT:" comments say what had to change and why.
-//
-// Interface changes used throughout:
-//   getNodesTotal() -> nodes()        getName() -> name()
-//   getWeight()     -> weight()       load() returns LoadStatus, not bool
-//   setWeight()     -> void, throws instead of returning false
-//   run()           -> void, throws instead of returning false
-//   getDistance()   -> distanceTo()   (NoRoute = -1 for unreachable, same as mine)
-//   getRoute(d, int*) -> routeTo(d) returning a string such as "3 -> 2"
-//   getSource()     -> source()       isValidNode() -> (none, checked through weight())
-//   printRoute(d)   -> (none, routeTo(d) gives the same text)
-//   operator<< for Dijkstra -> writeResults(ostream&)
 
 // makes a text file for the tests
 void writeFile(string fileName, string contents)
