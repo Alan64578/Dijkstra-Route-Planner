@@ -7,7 +7,7 @@
 
 class Dijkstra
 {
-    CollegeMap* pMap;   // not owned, never deleted here
+	CollegeMap* pMap;   // not owned, never deleted here & must outlive this object
     int nodes;
     int source;         // -1 = not run yet
     int* dist;
