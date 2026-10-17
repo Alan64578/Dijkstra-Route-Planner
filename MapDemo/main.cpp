@@ -21,8 +21,7 @@ int main()
 
     int src = 0;
     cout << "Enter source node (0-" << mtu.getNodesTotal() - 1 << "): ";
-    cin >> src;
-    if (!cin)
+    if (!(cin >> src))
     {
         cout << "Not a number - using node 0" << endl;
         src = 0;

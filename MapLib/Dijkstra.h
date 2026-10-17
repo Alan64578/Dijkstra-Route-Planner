@@ -4,7 +4,6 @@
 #include <iostream>
 #include <string>
 #include "CollegeMap.h"
-using namespace std;
 
 class Dijkstra
 {
@@ -34,10 +33,10 @@ public:
     int getRoute(int dest, int* route) const;
 
     void printRoute(int dest) const;
-    bool saveResults(string fileName) const;
+    bool saveResults(std::string fileName) const;
 
     // prints all routes, works for cout or a file
-    friend ostream& operator<<(ostream& stream, const Dijkstra& ob);
+    friend std::ostream& operator<<(std::ostream& stream, const Dijkstra& ob);
 };
 
 #endif
