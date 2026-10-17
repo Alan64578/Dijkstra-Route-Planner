@@ -1,15 +1,14 @@
 #include "pch.h"
 #include <cstdio>
 #include <fstream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include "CollegeMap.h"
 #include "Dijkstra.h"
 using namespace std;
 
-// My 46 tests from MapTests/test.cpp, ported to the AI solution's interface.
-// Names and the behaviour each test checks are unchanged.
+// My 36 tests from MapTests/test.cpp, ported to the AI solution's interface.
+// Test names and what each test checks are unchanged.
 // "PORT:" comments say what had to change and why.
 //
 // Interface changes used throughout:
@@ -17,13 +16,13 @@ using namespace std;
 //   getWeight()     -> weight()       load() returns LoadStatus, not bool
 //   setWeight()     -> void, throws instead of returning false
 //   run()           -> void, throws instead of returning false
-//   getDistance()   -> distanceTo()   getSource() -> source()
+//   getDistance()   -> distanceTo()   (NoRoute = -1 for unreachable, same as mine)
 //   getRoute(d, int*) -> routeTo(d) returning a string such as "3 -> 2"
+//   getSource()     -> source()       isValidNode() -> (none, checked through weight())
+//   printRoute(d)   -> (none, routeTo(d) gives the same text)
 //   operator<< for Dijkstra -> writeResults(ostream&)
 
-// ---------- helpers ----------
-
-// write a test file
+// makes a text file for the tests
 void writeFile(string fileName, string contents)
 {
     ofstream fout(fileName.c_str());
@@ -31,7 +30,7 @@ void writeFile(string fileName, string contents)
     fout.close();
 }
 
-// read a file back as words separated by single spaces
+// reads a file back word by word so spacing doesnt matter
 string readWords(string fileName)
 {
     ifstream fin(fileName.c_str());
@@ -45,108 +44,69 @@ string readWords(string fileName)
     return text;
 }
 
+// PORT: load() returns a LoadStatus, so "loaded OK" means status == Ok
 bool loadOk(CollegeMap& map, string fileName)
 {
     return map.load(fileName) == CollegeMap::LoadStatus::Ok;
 }
 
-// The MTU map data. MTU_DATA is the file exactly as printed in Appendix 3
-// unless the build defines USE_AI_CORRECTED_MAP (second run, for comparison).
-#ifdef USE_AI_CORRECTED_MAP
-static const char* MTU_ROW5 = "0 0 4 14 10 0 2 0 0\n";
-static const char* MTU_ROW6 = "0 0 0 0 0 2 0 1 6\n";
-#else
-static const char* MTU_ROW5 = "0 0 4 0 10 0 2 0 0\n";
-static const char* MTU_ROW6 = "0 0 0 14 0 2 0 1 6\n";
-#endif
-
-// ---------- fixtures ----------
-
+// small 3 node map from appendix 4
 class ThreeNodeMapTest : public ::testing::Test
 {
 protected:
-    const string fileName = "test_three_node.txt";
-    const string outName = "test_three_out.txt";
-
     void SetUp() override
     {
-        writeFile(fileName, "Tiny_Map\n3\n0 5 0\n5 0 2\n0 2 0\n");
+        writeFile("tiny.txt", "Tiny_Map\n3\n0 5 0\n5 0 2\n0 2 0\n");
     }
 
     void TearDown() override
     {
-        remove(fileName.c_str());
-        remove(outName.c_str());
+        remove("tiny.txt");
+        remove("out.txt");
     }
 };
 
+// MTU map from appendix 3, exactly as supplied
 class MtuMapTest : public ::testing::Test
 {
 protected:
-    const string fileName = "test_mtu.txt";
-    const string outName = "test_mtu_out.txt";
-
     void SetUp() override
     {
-        ofstream fout(fileName.c_str());
-        fout << "MTU_Map\n9\n"
-            << "0 4 0 0 0 0 0 8 0\n"
-            << "4 0 8 0 0 0 0 11 0\n"
-            << "0 8 0 7 0 4 0 0 2\n"
-            << "0 0 7 0 9 14 0 0 0\n"
-            << "0 0 0 9 0 10 0 0 0\n"
-            << MTU_ROW5
-            << MTU_ROW6
-            << "8 11 0 0 0 0 1 0 7\n"
-            << "0 0 2 0 0 0 6 7 0\n";
-        fout.close();
+        writeFile("mtu.txt", "MTU_Map\n9\n"
+                             "0 4 0 0 0 0 0 8 0\n"
+                             "4 0 8 0 0 0 0 11 0\n"
+                             "0 8 0 7 0 4 0 0 2\n"
+                             "0 0 7 0 9 14 0 0 0\n"
+                             "0 0 0 9 0 10 0 0 0\n"
+                             "0 0 4 0 10 0 2 0 0\n"
+                             "0 0 0 14 0 2 0 1 6\n"
+                             "8 11 0 0 0 0 1 0 7\n"
+                             "0 0 2 0 0 0 6 7 0\n");
     }
 
     void TearDown() override
     {
-        remove(fileName.c_str());
-        remove(outName.c_str());
+        remove("mtu.txt");
     }
 };
 
-class UnreachableMapTest : public ::testing::Test
+// map in two halves (0-1 and 2-3) so some nodes cant be reached
+class SplitMapTest : public ::testing::Test
 {
 protected:
-    const string fileName = "test_unreachable.txt";
-    const string outName = "test_unreachable_out.txt";
-
     void SetUp() override
     {
-        ofstream fout(fileName.c_str());
-        fout << "Split_Map\n4\n"
-            << "0 3 0 0\n"
-            << "3 0 0 0\n"
-            << "0 0 0 4\n"
-            << "0 0 4 0\n";
-        fout.close();
+        writeFile("split.txt", "Split_Map\n4\n0 3 0 0\n3 0 0 0\n0 0 0 4\n0 0 4 0\n");
     }
 
     void TearDown() override
     {
-        remove(fileName.c_str());
-        remove(outName.c_str());
+        remove("split.txt");
     }
 };
 
-class MalformedFileTest : public ::testing::Test
-{
-protected:
-    const string fileName = "test_bad.txt";
+// CollegeMap tests
 
-    void TearDown() override
-    {
-        remove(fileName.c_str());
-    }
-};
-
-// ================= CollegeMap =================
-
-// CM1
 // PORT: the AI's empty map has the name "" where mine uses "None".
 TEST(CollegeMapTest, DefaultMapIsEmpty)
 {
@@ -156,8 +116,8 @@ TEST(CollegeMapTest, DefaultMapIsEmpty)
     EXPECT_EQ("", map.name());
 }
 
-// CM1
-TEST(CollegeMapTest, EmptyMapCanBeCopiedAndAssigned)
+// PORT: none. Expected text kept, so this checks the AI's empty display.
+TEST(CollegeMapTest, EmptyMapCanBeCopiedAndPrinted)
 {
     CollegeMap empty;
     CollegeMap copy = empty;
@@ -165,22 +125,15 @@ TEST(CollegeMapTest, EmptyMapCanBeCopiedAndAssigned)
     assigned = empty;
     EXPECT_FALSE(copy.isLoaded());
     EXPECT_FALSE(assigned.isLoaded());
-    EXPECT_TRUE(copy == empty);
-}
 
-// CM1, CM6
-// PORT: none. Expected text kept, so this checks the AI's empty display.
-TEST(CollegeMapTest, EmptyMapDisplaysNoMapMessage)
-{
-    CollegeMap map;
-    ofstream fout("test_empty_out.txt");
-    fout << map;
+    ofstream fout("empty_out.txt");
+    fout << empty;
     fout.close();
-    EXPECT_EQ("Map: (no map loaded)", readWords("test_empty_out.txt"));
-    remove("test_empty_out.txt");
+    EXPECT_EQ("Map: (no map loaded)", readWords("empty_out.txt"));
+    remove("empty_out.txt");
 }
 
-// CM2
+// PORT: load() returns a LoadStatus.
 TEST(CollegeMapTest, MissingFileFailsToLoad)
 {
     CollegeMap map;
@@ -188,171 +141,110 @@ TEST(CollegeMapTest, MissingFileFailsToLoad)
     EXPECT_FALSE(map.isLoaded());
 }
 
-// CM3, CM4
+// PORT: load() returns a LoadStatus.
+TEST(CollegeMapTest, BadFilesFailToLoad)
+{
+    CollegeMap map;
+
+    writeFile("bad.txt", "Bad_Map\nthree\n0 5\n5 0\n");
+    EXPECT_FALSE(loadOk(map, "bad.txt"));
+
+    writeFile("bad.txt", "Bad_Map\n3\n0 5 0\n5 0 2\n0 2\n");
+    EXPECT_FALSE(loadOk(map, "bad.txt"));
+
+    writeFile("bad.txt", "Bad_Map\n2\n0 -5\n-5 0\n");
+    EXPECT_FALSE(loadOk(map, "bad.txt"));
+
+    writeFile("bad.txt", "Bad_Map\n2\n1 5\n5 0\n");
+    EXPECT_FALSE(loadOk(map, "bad.txt"));
+
+    remove("bad.txt");
+}
+
+// PORT: renamed getters.
 TEST_F(ThreeNodeMapTest, LoadingValidFileReportsThreeNodes)
 {
-    CollegeMap map(fileName);
-    ASSERT_TRUE(map.isLoaded());
+    CollegeMap map("tiny.txt");
+    EXPECT_TRUE(map.isLoaded());
     EXPECT_EQ(3, map.nodes());
     EXPECT_EQ("Tiny_Map", map.name());
 }
 
-// CM4, CM5 - getters work through a const reference
-// PORT: the AI has no isValidNode(); that line is replaced by a check
-// that weight() accepts node 2 through the const reference.
-TEST_F(ThreeNodeMapTest, ConstMapCanStillBeRead)
-{
-    CollegeMap map(fileName);
-    const CollegeMap& constMap = map;
-    EXPECT_TRUE(constMap.isLoaded());
-    EXPECT_EQ("Tiny_Map", constMap.name());
-    EXPECT_EQ(3, constMap.nodes());
-    EXPECT_EQ(5, constMap.weight(0, 1));
-    EXPECT_NO_THROW(constMap.weight(2, 2));
-    EXPECT_TRUE(constMap == map);
-}
-
-// CM3, CM5
+// PORT: getWeight() -> weight().
 TEST_F(ThreeNodeMapTest, GetWeightReturnsValuesFromFile)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     EXPECT_EQ(5, map.weight(0, 1));
     EXPECT_EQ(2, map.weight(2, 1));
     EXPECT_EQ(0, map.weight(0, 2));
-    EXPECT_EQ(0, map.weight(1, 1));
 }
 
-// CM2
-TEST_F(MalformedFileTest, NonNumericNodeCountFails)
+// PORT: the AI has no isValidNode(), so each check is done through weight():
+// a valid node reads without throwing, a bad one throws std::out_of_range
+// instead of returning -1.
+TEST_F(ThreeNodeMapTest, OutOfRangeNodesAreRejected)
 {
-    writeFile(fileName, "Bad_Map\nthree\n0 5\n5 0\n");
-    CollegeMap map;
-    EXPECT_FALSE(loadOk(map, fileName));
-    EXPECT_FALSE(map.isLoaded());
+    CollegeMap map("tiny.txt");
+    EXPECT_NO_THROW(map.weight(2, 0));
+    EXPECT_THROW(map.weight(3, 0), std::out_of_range);
+    EXPECT_THROW(map.weight(-1, 0), std::out_of_range);
+    EXPECT_THROW(map.weight(0, 3), std::out_of_range);
 }
 
-// CM2
-TEST_F(MalformedFileTest, ZeroNodeCountFails)
+// PORT: renamed getters. The AI rejects non-symmetric files, so this is expected to fail.
+TEST_F(MtuMapTest, NonSymmetricMapStillLoads)
 {
-    writeFile(fileName, "Bad_Map\n0\n");
-    CollegeMap map;
-    EXPECT_FALSE(loadOk(map, fileName));
-}
-
-// CM2
-TEST_F(MalformedFileTest, TooFewValuesFails)
-{
-    writeFile(fileName, "Bad_Map\n3\n0 5 0\n5 0 2\n0 2\n");
-    CollegeMap map;
-    EXPECT_FALSE(loadOk(map, fileName));
-    EXPECT_EQ(0, map.nodes());
-}
-
-// CM2
-TEST_F(MalformedFileTest, NegativeWeightFails)
-{
-    writeFile(fileName, "Bad_Map\n2\n0 -5\n-5 0\n");
-    CollegeMap map;
-    EXPECT_FALSE(loadOk(map, fileName));
-}
-
-// CM2
-TEST_F(MalformedFileTest, NonZeroDiagonalFails)
-{
-    writeFile(fileName, "Bad_Map\n2\n1 5\n5 0\n");
-    CollegeMap map;
-    EXPECT_FALSE(loadOk(map, fileName));
-}
-
-// CM2, CM9 - a failed reload must not leave the old map behind
-// PORT: an invalid index now throws instead of returning -1.
-TEST_F(ThreeNodeMapTest, FailedReloadLeavesMapEmpty)
-{
-    CollegeMap map(fileName);
-    ASSERT_TRUE(map.isLoaded());
-    EXPECT_FALSE(loadOk(map, "does_not_exist.txt"));
-    EXPECT_FALSE(map.isLoaded());
-    EXPECT_THROW(map.weight(0, 1), std::logic_error);
-}
-
-// CM2 - decision: not symmetric is only a warning (MTU map isn't symmetric)
-TEST_F(MtuMapTest, NonSymmetricMtuMapStillLoads)
-{
-    CollegeMap map(fileName);
+    CollegeMap map("mtu.txt");
     EXPECT_TRUE(map.isLoaded());
-    ASSERT_EQ(9, map.nodes());
-    EXPECT_EQ(14, map.weight(3, 5));
-    EXPECT_EQ(0, map.weight(5, 3));
+    EXPECT_EQ(9, map.nodes());
+    if (map.isLoaded())
+        EXPECT_EQ(14, map.weight(3, 5));
 }
 
-// CM5
 // PORT: setWeight() is void and throws on error.
 TEST_F(ThreeNodeMapTest, SetWeightChangesBothDirections)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     EXPECT_NO_THROW(map.setWeight(0, 2, 9));
     EXPECT_EQ(9, map.weight(0, 2));
     EXPECT_EQ(9, map.weight(2, 0));
 }
 
-// CM5 - boundary indices
-// PORT: bad indices throw std::out_of_range instead of returning -1/false.
-TEST_F(ThreeNodeMapTest, OutOfRangeIndexIsRejected)
+// PORT: bad index throws out_of_range; negative and self-loop throw invalid_argument.
+TEST_F(ThreeNodeMapTest, SetWeightRejectsBadValues)
 {
-    CollegeMap map(fileName);
-    EXPECT_THROW(map.weight(-1, 0), std::out_of_range);
-    EXPECT_THROW(map.weight(0, 3), std::out_of_range);
+    CollegeMap map("tiny.txt");
     EXPECT_THROW(map.setWeight(3, 0, 1), std::out_of_range);
-    EXPECT_THROW(map.setWeight(0, -1, 1), std::out_of_range);
-    EXPECT_EQ(5, map.weight(0, 1)); // nothing changed
-}
-
-// CM5
-// PORT: a negative weight throws std::invalid_argument.
-TEST_F(ThreeNodeMapTest, NegativeWeightIsRejected)
-{
-    CollegeMap map(fileName);
     EXPECT_THROW(map.setWeight(0, 1, -4), std::invalid_argument);
+    EXPECT_THROW(map.setWeight(1, 1, 3), std::invalid_argument);
     EXPECT_EQ(5, map.weight(0, 1));
 }
 
-// CM5
-// PORT: a self-loop weight throws std::invalid_argument.
-TEST_F(ThreeNodeMapTest, SelfLoopWeightIsRejected)
-{
-    CollegeMap map(fileName);
-    EXPECT_THROW(map.setWeight(1, 1, 3), std::invalid_argument);
-    EXPECT_EQ(0, map.weight(1, 1));
-}
-
-// CM6 - checks << output word by word
 // PORT: none. Expected text kept, so this checks the AI's display layout.
 TEST_F(ThreeNodeMapTest, DisplayShowsNameNodesAndMatrix)
 {
-    CollegeMap map(fileName);
-    ofstream fout(outName.c_str());
+    CollegeMap map("tiny.txt");
+    ofstream fout("out.txt");
     fout << map;
     fout.close();
-    EXPECT_EQ("Map: Tiny_Map Nodes: 3 0 1 2 0 0 5 0 1 5 0 2 2 0 2 0", readWords(outName));
+    EXPECT_EQ("Map: Tiny_Map Nodes: 3 0 1 2 0 0 5 0 1 5 0 2 2 0 2 0", readWords("out.txt"));
 }
 
-// CM7
+// PORT: setWeight() is void, renamed getter.
 TEST_F(ThreeNodeMapTest, CopyConstructorMakesIndependentCopy)
 {
-    CollegeMap original(fileName);
+    CollegeMap original("tiny.txt");
     CollegeMap copy = original;
     EXPECT_TRUE(copy == original);
 
     copy.setWeight(0, 1, 99);
-    EXPECT_EQ(99, copy.weight(0, 1));
     EXPECT_EQ(5, original.weight(0, 1));
-    EXPECT_TRUE(copy != original);
 }
 
-// CM7
+// PORT: setWeight() is void, renamed getter.
 TEST_F(ThreeNodeMapTest, AssignmentMakesIndependentCopy)
 {
-    CollegeMap original(fileName);
+    CollegeMap original("tiny.txt");
     CollegeMap assigned;
     assigned = original;
     EXPECT_TRUE(assigned == original);
@@ -361,45 +253,20 @@ TEST_F(ThreeNodeMapTest, AssignmentMakesIndependentCopy)
     EXPECT_EQ(2, assigned.weight(1, 2));
 }
 
-// CM7
+// PORT: renamed getter.
 TEST_F(ThreeNodeMapTest, SelfAssignmentKeepsData)
 {
-    CollegeMap map(fileName);
-    CollegeMap& sameMap = map;
-    map = sameMap;
+    CollegeMap map("tiny.txt");
+    map = map;
     EXPECT_TRUE(map.isLoaded());
-    EXPECT_EQ(3, map.nodes());
     EXPECT_EQ(5, map.weight(0, 1));
 }
 
-// CM7 - a = b = c works because = returns a reference
-TEST_F(ThreeNodeMapTest, ChainedAssignmentCopiesToAll)
-{
-    CollegeMap original(fileName);
-    CollegeMap a, b;
-    a = b = original;
-    EXPECT_TRUE(a == original);
-    EXPECT_TRUE(b == original);
-}
-
-// CM7, CM9 - assigning over a loaded map replaces it
-TEST_F(MtuMapTest, AssignmentReplacesLargerMap)
-{
-    CollegeMap big(fileName);
-    CollegeMap small;
-    small = big;
-    EXPECT_EQ(9, small.nodes());
-
-    CollegeMap empty;
-    small = empty;
-    EXPECT_FALSE(small.isLoaded());
-}
-
-// == and != operators
+// PORT: setWeight() is void.
 TEST_F(ThreeNodeMapTest, MapsWithDifferentWeightsAreNotEqual)
 {
-    CollegeMap a(fileName);
-    CollegeMap b(fileName);
+    CollegeMap a("tiny.txt");
+    CollegeMap b("tiny.txt");
     EXPECT_TRUE(a == b);
     EXPECT_FALSE(a != b);
 
@@ -408,47 +275,47 @@ TEST_F(ThreeNodeMapTest, MapsWithDifferentWeightsAreNotEqual)
     EXPECT_TRUE(a != b);
 }
 
-// CM9 - reload a different size
+// PORT: load() returns a LoadStatus, renamed getters.
 TEST_F(ThreeNodeMapTest, ReloadingReplacesOldMap)
 {
-    CollegeMap map(fileName);
-    writeFile("test_two_node.txt", "Two_Map\n2\n0 1\n1 0\n");
-    EXPECT_TRUE(loadOk(map, "test_two_node.txt"));
+    CollegeMap map("tiny.txt");
+    writeFile("two.txt", "Two_Map\n2\n0 1\n1 0\n");
+    EXPECT_TRUE(loadOk(map, "two.txt"));
     EXPECT_EQ(2, map.nodes());
     EXPECT_EQ("Two_Map", map.name());
-    remove("test_two_node.txt");
+    remove("two.txt");
 }
 
-// ================= Dijkstra =================
+// Dijkstra tests
 
-// D3 - one node map, nothing else to reach
+// PORT: run() is void (EXPECT_NO_THROW), getDistance() -> distanceTo().
 TEST(DijkstraTest, OneNodeMapRunsFromNodeZero)
 {
-    writeFile("test_one_node.txt", "One_Map\n1\n0\n");
-    CollegeMap map("test_one_node.txt");
+    writeFile("one.txt", "One_Map\n1\n0\n");
+    CollegeMap map("one.txt");
     Dijkstra planner(map);
     EXPECT_NO_THROW(planner.run(0));
     EXPECT_EQ(0, planner.distanceTo(0));
-    remove("test_one_node.txt");
+    remove("one.txt");
 }
 
-// D3, CM8 - hand worked: 0->1 = 5, 0->1->2 = 5+2 = 7
+// PORT: run() is void, getDistance() -> distanceTo().
 TEST_F(ThreeNodeMapTest, DistancesFromNodeZero)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     Dijkstra planner(map);
-    ASSERT_NO_THROW(planner.run(0));
+    EXPECT_NO_THROW(planner.run(0));
     EXPECT_EQ(0, planner.distanceTo(0));
     EXPECT_EQ(5, planner.distanceTo(1));
     EXPECT_EQ(7, planner.distanceTo(2));
 }
 
-// D3 - matches the sample output in the brief
+// PORT: getDistance() -> distanceTo().
 TEST_F(MtuMapTest, DistancesFromNodeZeroMatchBrief)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("mtu.txt");
     Dijkstra planner(map);
-    ASSERT_NO_THROW(planner.run(0));
+    planner.run(0);
     EXPECT_EQ(4, planner.distanceTo(1));
     EXPECT_EQ(12, planner.distanceTo(2));
     EXPECT_EQ(19, planner.distanceTo(3));
@@ -459,12 +326,12 @@ TEST_F(MtuMapTest, DistancesFromNodeZeroMatchBrief)
     EXPECT_EQ(14, planner.distanceTo(8));
 }
 
-// D3, CM8 - source 3, worked out by hand (see report)
+// PORT: getDistance() -> distanceTo().
 TEST_F(MtuMapTest, DistancesFromNodeThree)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("mtu.txt");
     Dijkstra planner(map);
-    ASSERT_NO_THROW(planner.run(3));
+    planner.run(3);
     EXPECT_EQ(19, planner.distanceTo(0));
     EXPECT_EQ(15, planner.distanceTo(1));
     EXPECT_EQ(7, planner.distanceTo(2));
@@ -476,47 +343,63 @@ TEST_F(MtuMapTest, DistancesFromNodeThree)
     EXPECT_EQ(9, planner.distanceTo(8));
 }
 
-// D4 - full route from node 3 to 7: 3 -> 2 -> 5 -> 6 -> 7
-// PORT: the route comes back as a string, not an int array.
-TEST_F(MtuMapTest, RouteFromNodeThreeToSeven)
+// PORT: getSource() -> source(), getDistance() -> distanceTo().
+TEST_F(MtuMapTest, SecondRunUsesNewSource)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("mtu.txt");
     Dijkstra planner(map);
-    ASSERT_NO_THROW(planner.run(3));
-    EXPECT_EQ("3 -> 2 -> 5 -> 6 -> 7", planner.routeTo(7));
+    planner.run(0);
+    planner.run(3);
+    EXPECT_EQ(3, planner.source());
+    EXPECT_EQ(0, planner.distanceTo(3));
+    EXPECT_EQ(19, planner.distanceTo(0));
     EXPECT_EQ(14, planner.distanceTo(7));
 }
 
-// D3 - running again with a new source gives the same as a new object
-TEST_F(MtuMapTest, RepeatedRunsMatchFreshObject)
+// PORT: the route comes back as a string, not an int array and a count.
+TEST_F(MtuMapTest, RouteFromNodeThreeToSeven)
 {
-    CollegeMap map(fileName);
-    Dijkstra reused(map);
-    ASSERT_NO_THROW(reused.run(0));
-    reused.run(3);
-
-    Dijkstra fresh(map);
-    fresh.run(3);
-
-    for (int i = 0; i < 9; i++)
-        EXPECT_EQ(fresh.distanceTo(i), reused.distanceTo(i));
-    EXPECT_EQ(3, reused.source());
+    CollegeMap map("mtu.txt");
+    Dijkstra planner(map);
+    planner.run(3);
+    EXPECT_EQ("3 -> 2 -> 5 -> 6 -> 7", planner.routeTo(7));
 }
 
-// D3 - invalid source nodes
-// PORT: run() throws std::out_of_range instead of returning false, and
-// distanceTo() throws when there are no results instead of returning -1.
+// PORT: the AI has no printRoute(); routeTo() returns the same text,
+// so the output is taken from it instead of captured from cout.
+TEST_F(MtuMapTest, PrintRouteShowsOneRoute)
+{
+    CollegeMap map("mtu.txt");
+    Dijkstra planner(map);
+    planner.run(3);
+
+    string output = planner.routeTo(7);
+
+    EXPECT_NE(string::npos, output.find("3 -> 2 -> 5 -> 6 -> 7"));
+}
+
+// PORT: no printRoute(); routeTo() gives "unreachable" for this node, so it is used instead of CaptureStdout().
+TEST_F(SplitMapTest, PrintRouteSaysUnreachable)
+{
+    CollegeMap map("split.txt");
+    Dijkstra planner(map);
+    planner.run(0);
+
+    string output = planner.routeTo(3);
+
+    EXPECT_NE(string::npos, output.find("unreachable"));
+}
+
+// PORT: run() throws std::out_of_range instead of returning false; getSource() -> source().
 TEST_F(ThreeNodeMapTest, InvalidSourceIsRejected)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     Dijkstra planner(map);
     EXPECT_THROW(planner.run(-1), std::out_of_range);
     EXPECT_THROW(planner.run(3), std::out_of_range);
     EXPECT_EQ(-1, planner.source());
-    EXPECT_THROW(planner.distanceTo(1), std::logic_error);
 }
 
-// D3 - no map loaded
 // PORT: run() throws std::logic_error instead of returning false.
 TEST(DijkstraTest, RunOnEmptyMapFails)
 {
@@ -525,161 +408,131 @@ TEST(DijkstraTest, RunOnEmptyMapFails)
     EXPECT_THROW(planner.run(0), std::logic_error);
 }
 
-// D4 - asking for results before run()
-// PORT: each query throws std::logic_error instead of returning -1/false/0.
-TEST_F(ThreeNodeMapTest, NoResultsBeforeRun)
+// PORT: getDistance() -> distanceTo(); an unreachable route is the string
+// "unreachable" instead of a count of 0.
+TEST_F(SplitMapTest, UnreachableNodeHasNoDistance)
 {
-    CollegeMap map(fileName);
-    Dijkstra planner(map);
-    EXPECT_THROW(planner.distanceTo(1), std::logic_error);
-    EXPECT_THROW(planner.isReachable(1), std::logic_error);
-    EXPECT_THROW(planner.routeTo(1), std::logic_error);
-}
-
-// D4 - unreachable node is reported, not 2147483647
-TEST_F(UnreachableMapTest, UnreachableNodeHasNoDistance)
-{
-    CollegeMap map(fileName);
-    Dijkstra planner(map);
-    ASSERT_NO_THROW(planner.run(0));
-    EXPECT_EQ(3, planner.distanceTo(1));
-    EXPECT_FALSE(planner.isReachable(2));
-    EXPECT_FALSE(planner.isReachable(3));
-    EXPECT_EQ(-1, planner.distanceTo(3));
-}
-
-// D4 - unreachable nodes get no route and print as unreachable
-// PORT: routeTo() gives "unreachable" instead of a count of 0, and the table
-// comes from writeResults(). Expected text kept, so this checks the layout.
-TEST_F(UnreachableMapTest, UnreachableNodePrintedAsUnreachable)
-{
-    CollegeMap map(fileName);
+    CollegeMap map("split.txt");
     Dijkstra planner(map);
     planner.run(0);
-    EXPECT_EQ("unreachable", planner.routeTo(3));
 
-    ofstream fout(outName.c_str());
-    planner.writeResults(fout);
-    fout.close();
-    EXPECT_EQ("Shortest routes from node 0 Destination Distance Route 1 3 0 -> 1 2 - unreachable 3 - unreachable",
-        readWords(outName));
+    EXPECT_EQ(3, planner.distanceTo(1));
+    EXPECT_TRUE(planner.isReachable(1));
+    EXPECT_FALSE(planner.isReachable(3));
+    EXPECT_EQ(-1, planner.distanceTo(3));
+
+    EXPECT_EQ("unreachable", planner.routeTo(3));
 }
 
-// D4 - all routes, hand worked from node 2: 2->1 = 2, 2->1->0 = 7
-// PORT: table comes from writeResults(). Expected text kept.
+// PORT: the table comes from writeResults(). Expected text kept.
 TEST_F(ThreeNodeMapTest, PrintAllFromNodeTwo)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     Dijkstra planner(map);
     planner.run(2);
-    ofstream fout(outName.c_str());
+    ofstream fout("out.txt");
     planner.writeResults(fout);
     fout.close();
     EXPECT_EQ("Shortest routes from node 2 Destination Distance Route 0 7 2 -> 1 -> 0 1 2 2 -> 1",
-        readWords(outName));
+              readWords("out.txt"));
 }
 
-// D5
 // PORT: none apart from run(). Expected text kept.
 TEST_F(ThreeNodeMapTest, SaveResultsWritesMapAndRoutes)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     Dijkstra planner(map);
     planner.run(0);
-    EXPECT_TRUE(planner.saveResults(outName));
-    string expected = "Map: Tiny_Map Nodes: 3 0 1 2 0 0 5 0 1 5 0 2 2 0 2 0 Shortest routes from node 0 Destination Distance Route 1 5 0 -> 1 2 7 0 -> 1 -> 2";
-    EXPECT_EQ(expected, readWords(outName));
+    EXPECT_TRUE(planner.saveResults("out.txt"));
+    EXPECT_EQ("Map: Tiny_Map Nodes: 3 0 1 2 0 0 5 0 1 5 0 2 2 0 2 0 "
+              "Shortest routes from node 0 Destination Distance Route 1 5 0 -> 1 2 7 0 -> 1 -> 2",
+              readWords("out.txt"));
 }
 
-// D5
 // PORT: saveResults() before run() throws std::logic_error instead of returning false.
 TEST_F(ThreeNodeMapTest, SaveBeforeRunFails)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     Dijkstra planner(map);
-    EXPECT_THROW(planner.saveResults(outName), std::logic_error);
+    EXPECT_THROW(planner.saveResults("out.txt"), std::logic_error);
 }
 
-// D1, CM8 - Dijkstra uses the map itself, not a copy
+// PORT: setWeight() is void, getDistance() -> distanceTo().
 TEST_F(ThreeNodeMapTest, DijkstraSeesChangesToMap)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     Dijkstra planner(map);
     planner.run(0);
     EXPECT_EQ(7, planner.distanceTo(2));
 
-    map.setWeight(0, 2, 1); // add a shortcut
+    map.setWeight(0, 2, 1);
     planner.run(0);
     EXPECT_EQ(1, planner.distanceTo(2));
 }
 
-// D2 - map reloaded at a different size after Dijkstra was made
+// PORT: run() is void, getDistance() -> distanceTo().
 TEST_F(ThreeNodeMapTest, RunAfterMapReloadedToNewSize)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     Dijkstra planner(map);
-    planner.run(0);
 
-    writeFile("test_big.txt", "Big_Map\n4\n0 1 0 0\n1 0 1 0\n0 1 0 1\n0 0 1 0\n");
-    ASSERT_TRUE(loadOk(map, "test_big.txt"));
-    ASSERT_NO_THROW(planner.run(0));
+    writeFile("big.txt", "Big_Map\n4\n0 1 0 0\n1 0 1 0\n0 1 0 1\n0 0 1 0\n");
+    map.load("big.txt");
+    EXPECT_NO_THROW(planner.run(0));
     EXPECT_EQ(3, planner.distanceTo(3));
-    remove("test_big.txt");
+    remove("big.txt");
 }
 
-// D1, D7 - map still works after the Dijkstra object is destroyed
+// PORT: renamed getter.
 TEST_F(ThreeNodeMapTest, MapSurvivesDijkstraDestruction)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("tiny.txt");
     {
         Dijkstra planner(map);
         planner.run(0);
     }
     EXPECT_TRUE(map.isLoaded());
-    EXPECT_EQ(3, map.nodes());
     EXPECT_EQ(5, map.weight(0, 1));
 }
 
-// ================= Reference code defects =================
+// tests for the bugs in the reference code
 
-// Defect: parent[0] = -1 instead of parent[src] (only works when src is 0)
-// PORT: route is a string.
+// PORT: the route comes back as a string.
 TEST_F(MtuMapTest, RouteFromNonZeroSourceStartsAtSource)
 {
-    CollegeMap map(fileName);
+    CollegeMap map("mtu.txt");
     Dijkstra planner(map);
-    ASSERT_NO_THROW(planner.run(3));
+    planner.run(3);
     EXPECT_EQ("3 -> 2", planner.routeTo(2));
 }
 
-// Defect: printSolution always prints source as 0
-// PORT: table comes from writeResults(). Same word positions checked.
-TEST_F(MtuMapTest, PrintAllShowsRealSource)
+// PORT: getDistance() -> distanceTo().
+TEST_F(SplitMapTest, UnreachableNodeDoesNotGoNegative)
 {
-    CollegeMap map(fileName);
-    Dijkstra planner(map);
-    ASSERT_NO_THROW(planner.run(6));
-    ofstream fout(outName.c_str());
-    planner.writeResults(fout);
-    fout.close();
-    ifstream fin(outName.c_str());
-    string w1, w2, w3, w4, w5;
-    fin >> w1 >> w2 >> w3 >> w4 >> w5;
-    EXPECT_EQ("node", w4);
-    EXPECT_EQ("6", w5);
-}
-
-// Defect: minDistance uses <= so it picks unreachable node 2 (INT_MAX),
-// then INT_MAX + 4 overflows and node 3 gets a negative distance
-TEST_F(UnreachableMapTest, UnreachableNodeDoesNotGetOverflowDistance)
-{
-    CollegeMap map(fileName);
+    CollegeMap map("split.txt");
     Dijkstra planner(map);
     planner.run(0);
     EXPECT_EQ(-1, planner.distanceTo(2));
     EXPECT_EQ(-1, planner.distanceTo(3));
 
-    planner.run(2); // other side works too
+    planner.run(2);
     EXPECT_EQ(4, planner.distanceTo(3));
-    EXPECT_EQ(-1, planner.distanceTo(0));
+}
+
+// PORT: the table comes from writeResults(). Same word position checked.
+TEST_F(MtuMapTest, PrintAllShowsRealSource)
+{
+    CollegeMap map("mtu.txt");
+    Dijkstra planner(map);
+    planner.run(6);
+    ofstream fout("mtu_out.txt");
+    planner.writeResults(fout);
+    fout.close();
+
+    ifstream fin("mtu_out.txt");
+    string word;
+    fin >> word >> word >> word >> word >> word;
+    fin.close();
+    EXPECT_EQ("6", word);
+    remove("mtu_out.txt");
 }

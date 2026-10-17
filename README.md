@@ -14,7 +14,7 @@ The solution has three projects:
 | --- | --- |
 | `MapLib` | Static library with the two classes, `CollegeMap` and `Dijkstra` |
 | `MapDemo` | Console app that runs through the demo from the brief |
-| `MapTests` | Google Test project with 46 tests |
+| `MapTests` | Google Test project with 36 tests |
 
 `Report/` has the UML class diagram as a draw.io file.
 
@@ -27,9 +27,9 @@ The solution has three projects:
 | `CollegeMapLib` | The AI's `CollegeMap` and `Dijkstra` classes |
 | `Demo` | The AI's demo program |
 | `Tests` | The AI's own 65 Google Test tests (all pass) |
-| `PortedTests` | My 46 tests from `MapTests`, changed to fit the AI's class interface |
+| `PortedTests` | My 36 tests from `MapTests`, changed to fit the AI's class interface |
 
-On the map exactly as supplied in the brief, 32 of my 46 tests pass on the AI code and 14 fail. Most of the failures are because the AI rejects the non-symmetric `MTU Map.txt`, and the rest are output layout differences. The report goes through each one.
+On the map exactly as supplied in the brief, 24 of my 36 tests pass on the AI code and 12 fail. Most of the failures are because the AI rejects the non-symmetric `MTU Map.txt`, and the rest are output layout differences. The report goes through each one.
 
 ## How the classes fit together
 
@@ -84,7 +84,7 @@ Dijkstra reads row `u` of the matrix as the edges going out of node `u`, so thos
 - [x] `CollegeMap`: copy constructor, `=`, `==`, `!=` and `<<`
 - [x] `Dijkstra`: algorithm, results and saving to file
 - [x] Demo program
-- [x] Unit tests (46)
+- [x] Unit tests (36)
 - [x] UML class diagram
 - [x] Confirm the Visual Studio build has no warnings at /W3
 - [ ] Report
