@@ -87,7 +87,7 @@ Dijkstra reads row `u` of the matrix as the edges going out of node `u`, so thos
 - [x] Unit tests (34)
 - [x] UML class diagram
 - [x] Confirm the Visual Studio build has no warnings at /W3
-- [ ] Report
+- [x] Report
 - [x] AI comparison (Part D)
 
 ## Rules from the brief
