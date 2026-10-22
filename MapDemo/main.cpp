@@ -1,56 +1,52 @@
 #include <iostream>
 #include <string>
+#include <cstdlib>
 #include "CollegeMap.h"
 #include "Dijkstra.h"
 using namespace std;
 
 int main()
 {
-    // bad file - map should be empty but still safe
-    CollegeMap bad("missing.txt");
-    cout << bad << endl;
-
-    // load and show the map
+    // load and show map
     CollegeMap mtu("MTU Map.txt");
     if (!mtu.isLoaded())
     {
-        cout << "Could not load map - is 'MTU Map.txt' in the MapDemo folder?" << endl;
+        cout << "Could not load map" << endl;
         return 1;
     }
     cout << mtu << endl;
 
-    int src = 0;
+    // atoi gives 0 if bad
+    string input = "";
     cout << "Enter source node (0-" << mtu.getNodesTotal() - 1 << "): ";
-    if (!(cin >> src))
-    {
+    cin >> input;
+    int src = atoi(input.c_str());
+    if (src == 0 && !(input == "0"))
         cout << "Not a number - using node 0" << endl;
-        src = 0;
-    }
     cout << endl;
 
+    // new so we can delete
+    Dijkstra* planner = new Dijkstra(&mtu);
+    if (planner->run(src))
     {
-        Dijkstra planner(mtu);
-        if (planner.run(src))
-        {
-            cout << planner;
-            if (planner.saveResults("Routes.txt"))
-                cout << "Results saved to Routes.txt" << endl;
-        }
-    }   // planner gets destroyed here
+        cout << *planner;
+        if (planner->saveResults("Routes.txt"))
+            cout << "Results saved to Routes.txt" << endl;
+    }
+    delete planner;     // map survives (aggregation)
 
-    // map should still work
     cout << endl << "Dijkstra object destroyed - map still usable: "
         << mtu.getName() << ", " << mtu.getNodesTotal() << " nodes" << endl << endl;
 
-    // change a weight and rerun
-    Dijkstra planner2(mtu);
+    // change weight and rerun
+    Dijkstra planner2(&mtu);
     planner2.run(0);
     cout << "Before change: ";
     planner2.printRoute(4);
 
     mtu.setWeight(0, 4, 3);
     planner2.run(0);
-    cout << "After adding edge 0-4 (weight 3): ";
+    cout << "After adding edge 0-4: ";
     planner2.printRoute(4);
     cout << endl;
 
@@ -75,7 +71,7 @@ int main()
     else
         cout << "  assigned == mtu ? no" << endl;
 
-    assigned = assigned;    // self assignment test
+    assigned = assigned;    // self assignment
     if (assigned == mtu)
         cout << "  after self-assignment, assigned == mtu ? yes" << endl;
     else
