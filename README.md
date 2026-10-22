@@ -6,6 +6,10 @@
 
 Dijkstra shortest-route planner in C++ for my Object Programming module (ELX4) at MTU. It loads a campus map from a text file and works out the shortest distance and route from any node to every other node.
 
+## Status
+
+**Finished and submitted on 22 October 2026.** The report (PDF) went in on Canvas with the AI solution zip and my ported tests. The code in `MapLib`, `MapDemo` and `MapTests` is the submitted version.
+
 ## What's in here
 
 The solution has three projects:
@@ -14,7 +18,7 @@ The solution has three projects:
 | --- | --- |
 | `MapLib` | Static library with the two classes, `CollegeMap` and `Dijkstra` |
 | `MapDemo` | Console app that runs through the demo from the brief |
-| `MapTests` | Google Test project with 34 tests |
+| `MapTests` | Google Test project with 20 tests |
 
 `Report/` has the UML class diagram as a draw.io file. The written report is submitted as a PDF on Canvas.
 
@@ -27,9 +31,9 @@ The solution has three projects:
 | `CollegeMapLib` | The AI's `CollegeMap` and `Dijkstra` classes |
 | `Demo` | The AI's demo program |
 | `Tests` | The AI's own 65 Google Test tests (all pass) |
-| `PortedTests` | My 34 tests from `MapTests`, changed to fit the AI's class interface |
+| `PortedTests` | My 20 tests from `MapTests`, changed to fit the AI's class interface |
 
-On the map exactly as supplied in the brief, 22 of my 34 tests pass on the AI code and 12 fail. 8 of the failures are because the AI rejects the non-symmetric `MTU Map.txt`; the rest are output layout differences and one save-file difference. The report goes through each one.
+On the map exactly as supplied in the brief, 13 of my 20 tests pass on the AI code and 7 fail. 3 of the failures are because the AI rejects the non-symmetric `MTU Map.txt`, 3 are output layout differences and 1 is a save-file difference. The report goes through each one.
 
 ## How the classes fit together
 
@@ -37,19 +41,19 @@ On the map exactly as supplied in the brief, 22 of my 34 tests pass on the AI co
 
 ```mermaid
 classDiagram
-    direction LR
-    class Dijkstra {
-        +run(src) bool
-        +getDistance(dest) int
-        +getRoute(dest, route) int
-        +saveResults(fileName) bool
-    }
-    class CollegeMap {
-        +load(fileName) bool
-        +getWeight(from, to) int
-        +setWeight(from, to, weight) bool
-    }
-    Dijkstra "0..*" o-- "1" CollegeMap : pMap
+direction LR
+class Dijkstra {
++run(src) bool
++getDistance(dest) int
++getRoute(dest, route) int
++saveResults(fileName) bool
+}
+class CollegeMap {
++load(fileName) bool
++getWeight(from, to) int
++setWeight(from, to, weight) bool
+}
+Dijkstra "0..*" o-- "1" CollegeMap : pMap
 ```
 
 ## Moving between computers
@@ -81,14 +85,15 @@ Dijkstra reads row `u` of the matrix as the edges going out of node `u`, so thos
 ## Progress
 
 - [x] `CollegeMap`: loading, validation and storage
-- [x] `CollegeMap`: copy constructor, `=`, `==`, `!=` and `<<`
+- [x] `CollegeMap`: copy constructor, `=`, `==` and `<<`
 - [x] `Dijkstra`: algorithm, results and saving to file
 - [x] Demo program
-- [x] Unit tests (34)
+- [x] Unit tests (20)
 - [x] UML class diagram
 - [x] Confirm the Visual Studio build has no warnings at /W3
 - [x] Report
 - [x] AI comparison (Part D)
+- [x] Submitted (22 October 2026)
 
 ## Rules from the brief
 
