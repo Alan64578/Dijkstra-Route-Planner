@@ -7,7 +7,7 @@
 
 class Dijkstra
 {
-	CollegeMap* pMap;   // not owned, never deleted here & must outlive this object
+    CollegeMap* pMap;   // not owned, never deleted
     int nodes;
     int source;         // -1 = not run yet
     int* dist;
@@ -17,9 +17,10 @@ class Dijkstra
     void allocate(int size);
     void release();
     int minDistance() const;
+    void printPath(std::ostream& stream, int j) const;
 
 public:
-    Dijkstra(CollegeMap& aMap);
+    Dijkstra(CollegeMap* aMap);
     ~Dijkstra();
 
     // no copying allowed
@@ -35,7 +36,6 @@ public:
     void printRoute(int dest) const;
     bool saveResults(std::string fileName) const;
 
-    // prints all routes, works for cout or a file
     friend std::ostream& operator<<(std::ostream& stream, const Dijkstra& ob);
 };
 

@@ -1,16 +1,24 @@
 #include "Dijkstra.h"
 #include <fstream>
 #include <iomanip>
-#include <climits>
+#include <cstdlib>
 using namespace std;
 
-// just keep a pointer to the map
-Dijkstra::Dijkstra(CollegeMap& aMap)
-    : pMap(&aMap), nodes(0), source(-1), dist(0), processed(0), parent(0)
+// means not reached yet
+const int INFINITE_DIST = 2147483647;
+
+// store map pointer only
+Dijkstra::Dijkstra(CollegeMap* aMap)
 {
+    pMap = aMap;
+    nodes = 0;
+    source = -1;
+    dist = 0;
+    processed = 0;
+    parent = 0;
 }
 
-// only frees our arrays, not the map
+// frees arrays, not map
 Dijkstra::~Dijkstra()
 {
     release();
@@ -19,18 +27,25 @@ Dijkstra::~Dijkstra()
 void Dijkstra::allocate(int size)
 {
     nodes = size;
+
     dist = new int[nodes];
     processed = new bool[nodes];
     parent = new int[nodes];
+
+    if (!dist || !processed || !parent)
+    {
+        cout << "Allocation failed." << endl;
+        exit(1);
+    }
 }
 
 void Dijkstra::release()
 {
-    if (dist != 0)
+    if (dist)
         delete[] dist;
-    if (processed != 0)
+    if (processed)
         delete[] processed;
-    if (parent != 0)
+    if (parent)
         delete[] parent;
     dist = 0;
     processed = 0;
@@ -38,10 +53,10 @@ void Dijkstra::release()
     nodes = 0;
 }
 
-// closest node not processed yet, -1 if none left
+// closest unprocessed node, -1 if none
 int Dijkstra::minDistance() const
 {
-    int min = INT_MAX;
+    int min = INFINITE_DIST;
     int minIndex = -1;
 
     for (int v = 0; v < nodes; v++)
@@ -57,7 +72,7 @@ int Dijkstra::minDistance() const
 
 bool Dijkstra::run(int src)
 {
-    if (!pMap->isLoaded())
+    if (!pMap || !pMap->isLoaded())
     {
         cout << "Dijkstra: no map loaded" << endl;
         source = -1;
@@ -70,35 +85,35 @@ bool Dijkstra::run(int src)
         return false;
     }
 
-    // allocate each run in case the map size changed
+    // map size may change
     release();
     allocate(pMap->getNodesTotal());
 
     for (int i = 0; i < nodes; i++)
     {
-        dist[i] = INT_MAX;
+        dist[i] = INFINITE_DIST;
         processed[i] = false;
         parent[i] = -1;
     }
     dist[src] = 0;
 
-    for (int count = 0; count < nodes; count++)
+    // stop when none reachable
+    int u = minDistance();
+    while (u != -1)
     {
-        int u = minDistance();
-        if (u == -1)
-            break;      // rest are unreachable
-
         processed[u] = true;
 
         for (int v = 0; v < nodes; v++)
         {
-            int w = pMap->getWeight(u, v);    // row u = edges out of u
+            int w = pMap->getWeight(u, v);
             if (!processed[v] && w > 0 && dist[u] + w < dist[v])
             {
                 parent[v] = u;
                 dist[v] = dist[u] + w;
             }
         }
+
+        u = minDistance();
     }
 
     source = src;
@@ -114,7 +129,7 @@ bool Dijkstra::isReachable(int dest) const
 {
     if (source == -1 || dest < 0 || dest >= nodes)
         return false;
-    return dist[dest] != INT_MAX;
+    return dist[dest] != INFINITE_DIST;
 }
 
 // -1 if unreachable
@@ -125,29 +140,47 @@ int Dijkstra::getDistance(int dest) const
     return dist[dest];
 }
 
-// puts the route source..dest into route[], returns how many nodes (0 if none)
-// route[] needs room for the number of nodes in the map
+// fills route, returns length
 int Dijkstra::getRoute(int dest, int* route) const
 {
     if (!isReachable(dest))
         return 0;
 
-    // count the nodes back to the source
+    // count back to source
     int count = 0;
-    for (int node = dest; node != -1; node = parent[node])
+    int node = dest;
+    while (node != -1)
+    {
         count++;
+        node = parent[node];
+    }
 
-    // fill in backwards so route[0] is the source
+    // fill in backwards
     int i = count - 1;
-    for (int node = dest; node != -1; node = parent[node])
+    node = dest;
+    while (node != -1)
     {
         route[i] = node;
         i--;
+        node = parent[node];
     }
     return count;
 }
 
-// one destination to the screen
+// print path from source to destination
+void Dijkstra::printPath(ostream& stream, int j) const
+{
+    // base case: j is source
+    if (parent[j] == -1)
+    {
+        stream << j;
+        return;
+    }
+    printPath(stream, parent[j]);
+    stream << " -> " << j;
+}
+
+// one route to screen
 void Dijkstra::printRoute(int dest) const
 {
     if (source == -1)
@@ -166,22 +199,12 @@ void Dijkstra::printRoute(int dest) const
         return;
     }
 
-    int* route = new int[nodes];
-    int count = getRoute(dest, route);
-
     cout << "Node " << source << " to " << dest << ", distance " << dist[dest] << ": ";
-    for (int i = 0; i < count; i++)
-    {
-        if (i > 0)
-            cout << " -> ";
-        cout << route[i];
-    }
+    printPath(cout, dest);
     cout << endl;
-
-    delete[] route;
 }
 
-// all routes, same code for cout and files
+// all routes, any stream
 ostream& operator<<(ostream& stream, const Dijkstra& ob)
 {
     if (ob.source == -1)
@@ -193,7 +216,6 @@ ostream& operator<<(ostream& stream, const Dijkstra& ob)
     stream << "Shortest routes from node " << ob.source << endl;
     stream << "Destination  Distance    Route" << endl;
 
-    int* route = new int[ob.nodes];
     for (int dest = 0; dest < ob.nodes; dest++)
     {
         if (dest != ob.source)
@@ -206,23 +228,16 @@ ostream& operator<<(ostream& stream, const Dijkstra& ob)
             else
             {
                 stream << setw(10) << ob.dist[dest] << "    ";
-                int count = ob.getRoute(dest, route);
-                for (int i = 0; i < count; i++)
-                {
-                    if (i > 0)
-                        stream << " -> ";
-                    stream << route[i];
-                }
+                ob.printPath(stream, dest);
                 stream << endl;
             }
         }
     }
-    delete[] route;
 
     return stream;
 }
 
-// writes map and routes to a text file
+// map and routes to file
 bool Dijkstra::saveResults(string fileName) const
 {
     if (source == -1)
@@ -231,7 +246,7 @@ bool Dijkstra::saveResults(string fileName) const
         return false;
     }
 
-    ofstream fout(fileName.c_str());
+    ofstream fout(fileName);
     if (!fout)
     {
         cout << "Cannot open output file: " << fileName << endl;
